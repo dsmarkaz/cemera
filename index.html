@@ -59,7 +59,6 @@
       transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    /* Login View States */
     #loginView {
       opacity: 1;
       visibility: visible;
@@ -74,7 +73,6 @@
       pointer-events: none;
     }
 
-    /* Camera View States */
     #cameraView {
       opacity: 0;
       visibility: hidden;
@@ -215,7 +213,21 @@
       color: white;
     }
 
-    /* Camera UI Styles */
+    .forgot-password-link {
+      background: none;
+      border: none;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.8em;
+      cursor: pointer;
+      margin-top: 4px;
+      text-decoration: underline;
+      transition: color 0.2s ease;
+    }
+
+    .forgot-password-link:hover {
+      color: white;
+    }
+
     .camera-header {
       padding: 10px 15px;
       display: flex;
@@ -363,16 +375,13 @@
 </head>
 <body>
 
-  <!-- Hidden Inputs -->
   <input type="file" id="profileImageInput" accept="image/*" style="display: none;">
 
-  <!-- Main Card Wrapper -->
   <div class="card-wrapper" id="cardWrapper">
 
-    <!-- FRONT CARD: LOGIN -->
     <div class="card" id="loginView">
       <form class="form" id="loginForm">
-        <p class="heading-font">Welcome</p>
+        <p class="heading-font" id="formHeading">Welcome</p>
         
         <div class="profile-upload-container">
           <div class="profile-avatar-circle" id="avatarCircle" title="Upload Photo">
@@ -385,7 +394,7 @@
           <span class="add-photo-label" id="photoLabelText">Add your profile picture</span>
         </div>
 
-        <div class="field">
+        <div class="field" id="userNameFieldContainer">
           <svg viewBox="0 0 24 24" fill="currentColor" class="input-icon">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"></path>
           </svg>
@@ -400,12 +409,13 @@
         </div>
 
         <div style="width: 100%; margin-top: 5px;">
-          <button type="submit" class="standard-button">Access Camera</button>
+          <button type="submit" class="standard-button" id="submitBtnText">Access Camera</button>
         </div>
+
+        <button type="button" class="forgot-password-link" id="forgotPasswordBtn" style="display: none;">Forgot Password?</button>
       </form>
     </div>
 
-    <!-- CAMERA VIEW (Initially Hidden inside the card structure) -->
     <div class="card" id="cameraView">
       <div class="camera-header">
         <button class="back-btn" id="backBtn" title="Back">
@@ -457,9 +467,14 @@
     const passwordInput = document.getElementById('passwordInput');
     const photoLabelText = document.getElementById('photoLabelText');
     const backBtn = document.getElementById('backBtn');
+    const formHeading = document.getElementById('formHeading');
+    const userNameFieldContainer = document.getElementById('userNameFieldContainer');
+    const submitBtnText = document.getElementById('submitBtnText');
+    const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
 
     let isImageUploaded = false;
     let currentProfileImageSrc = "";
+    let isRegistered = false;
 
     const videoElement = document.getElementById('cameraFeed');
     const flipBtn = document.getElementById('flipBtn');
@@ -481,7 +496,7 @@
 
     const MATCH_TIME = 1200;
     const TONGUE_MATCH_TIME = 700;
-    const DETECTION_INTERVAL = 200; // Balanced interval for smooth performance and responsiveness
+    const DETECTION_INTERVAL = 500;
 
     const humanConfig = {
       backend: 'webgl',
@@ -493,8 +508,8 @@
       face: {
         enabled: true,
         detector: { enabled: true, maxDetected: 1, minConfidence: 0.35, rotation: true },
-        mesh: { enabled: true }, // Restored face mesh configuration as requested
-        iris: { enabled: true }, // Restored iris configuration to keep face tracking robust
+        mesh: { enabled: true },
+        iris: { enabled: true },
         emotion: { enabled: true, minConfidence: 0.15 },
         description: { enabled: false },
         antispoof: { enabled: false },
@@ -532,7 +547,7 @@
 
       try {
         const constraints = {
-          video: { facingMode: facing, width: { ideal: 640 }, height: { ideal: 480 } },
+          video: { facingMode: facing, width: { ideal: 320 }, height: { ideal: 240 } },
           audio: false
         };
 
@@ -548,28 +563,63 @@
       }
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
+    function updateUIState() {
       const savedName = localStorage.getItem('d_vault_username');
       const savedProfile = localStorage.getItem('d_vault_profile');
+      const savedPassword = localStorage.getItem('d_vault_password');
 
-      if (savedName) userNameInput.value = savedName;
-
-      if (savedProfile) {
+      if (savedName && savedPassword && savedProfile) {
+        isRegistered = true;
+        userNameInput.value = savedName;
+        userNameInput.disabled = true;
+        userNameFieldContainer.style.opacity = '0.7';
+        
         currentProfileImageSrc = savedProfile;
         userUploadedImage.src = currentProfileImageSrc;
         userUploadedImage.style.display = 'block';
         cameraIcon.style.display = 'none';
         avatarCircle.style.borderStyle = 'solid';
+        avatarCircle.style.pointerEvents = 'none';
         isImageUploaded = true;
-        photoLabelText.textContent = "Profile picture loaded";
+        photoLabelText.textContent = "Profile picture locked";
+
+        formHeading.textContent = "Welcome Back";
+        submitBtnText.textContent = "Login";
+        forgotPasswordBtn.style.display = 'block';
+      } else {
+        isRegistered = false;
+        userNameInput.value = '';
+        userNameInput.disabled = false;
+        userNameFieldContainer.style.opacity = '1';
+
+        currentProfileImageSrc = '';
+        userUploadedImage.src = '';
+        userUploadedImage.style.display = 'none';
+        cameraIcon.style.display = 'block';
+        avatarCircle.style.borderStyle = 'dashed';
+        avatarCircle.style.pointerEvents = 'auto';
+        isImageUploaded = false;
+        photoLabelText.textContent = "Add your profile picture";
+
+        formHeading.textContent = "Welcome";
+        submitBtnText.textContent = "Access Camera";
+        forgotPasswordBtn.style.display = 'none';
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      updateUIState();
+    });
+
+    avatarCircle.addEventListener('click', () => {
+      if (!isRegistered) {
+        profileImageInput.click();
       }
     });
 
-    avatarCircle.addEventListener('click', () => profileImageInput.click());
-
     profileImageInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
-      if (file) {
+      if (file && !isRegistered) {
         const reader = new FileReader();
         reader.onload = (evt) => {
           currentProfileImageSrc = evt.target.result;
@@ -578,13 +628,11 @@
           cameraIcon.style.display = 'none';
           avatarCircle.style.borderStyle = 'solid';
           isImageUploaded = true;
-          localStorage.setItem('d_vault_profile', currentProfileImageSrc);
         };
         reader.readAsDataURL(file);
       }
     });
 
-    // Login Form Submission with Smooth Transition
     loginForm.addEventListener('submit', async (event) => {
       event.preventDefault();
 
@@ -593,10 +641,24 @@
         return;
       }
 
-      const userName = userNameInput.value.trim();
-      localStorage.setItem('d_vault_username', userName);
+      const enteredPassword = passwordInput.value.trim();
+      const enteredUserName = userNameInput.value.trim();
 
-      // Trigger transition to camera view
+      if (!isRegistered) {
+        localStorage.setItem('d_vault_username', enteredUserName);
+        localStorage.setItem('d_vault_profile', currentProfileImageSrc);
+        localStorage.setItem('d_vault_password', enteredPassword);
+      } else {
+        const savedPassword = localStorage.getItem('d_vault_password');
+        if (enteredPassword !== savedPassword) {
+          alert("Incorrect password! Please try again or use Forgot Password.");
+          return;
+        }
+      }
+
+      passwordInput.value = '';
+      updateUIState();
+
       cardWrapper.classList.add('expanded');
       loginView.classList.add('fade-out');
       cameraView.classList.add('fade-in');
@@ -604,6 +666,17 @@
       await startCamera(currentFacingMode);
       if (!aiReady) {
         initFaceAI();
+      }
+    });
+
+    forgotPasswordBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      if (confirm("Are you sure you want to reset? Your previous username and profile picture will be cleared.")) {
+        localStorage.removeItem('d_vault_username');
+        localStorage.removeItem('d_vault_profile');
+        localStorage.removeItem('d_vault_password');
+        passwordInput.value = '';
+        updateUIState();
       }
     });
 
@@ -761,7 +834,7 @@
         if (!blob) return;
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.href = url;
+        link.href, link.href = url;
         link.download = `DVault_Capture_${Date.now()}.png`;
         document.body.appendChild(link);
         link.click();
@@ -770,7 +843,6 @@
       }, 'image/png');
     }
 
-    // Back button to return to login view smoothly
     backBtn.addEventListener('click', () => {
       currentIndex = 0;
       progress = 0;
