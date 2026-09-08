@@ -481,7 +481,7 @@
 
     const MATCH_TIME = 1200;
     const TONGUE_MATCH_TIME = 700;
-    const DETECTION_INTERVAL = 100;
+    const DETECTION_INTERVAL = 200; // Balanced interval for smooth performance and responsiveness
 
     const humanConfig = {
       backend: 'webgl',
@@ -493,8 +493,8 @@
       face: {
         enabled: true,
         detector: { enabled: true, maxDetected: 1, minConfidence: 0.35, rotation: true },
-        mesh: { enabled: true },
-        iris: { enabled: true },
+        mesh: { enabled: true }, // Restored face mesh configuration as requested
+        iris: { enabled: true }, // Restored iris configuration to keep face tracking robust
         emotion: { enabled: true, minConfidence: 0.15 },
         description: { enabled: false },
         antispoof: { enabled: false },
